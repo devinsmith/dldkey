@@ -31,6 +31,7 @@ struct unknown {
 static int sub_1EFC(int arg1);
 static int sub_1F2C();
 static void sub_6738();
+static void sub_2E94(int arg1);
 
 struct unknown stuff = {
   0, 0, 0, 0, 0, sub_6738
@@ -39,6 +40,7 @@ struct unknown stuff = {
 // 0xE8F0
 static int done_init = 0;
 
+unsigned int data_E920 = 0xbffffddc;
 // E928 (no idea how large this is)
 unsigned int data_E928[] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
 
@@ -54,8 +56,11 @@ struct off_EAB0_s off_EAB0 = {
 // 0xEEC4
 static int g_dword_EEC4 = 0;
 
-void sub_444()
+static void sub_444(int arg1)
 {
+  char *lang = getenv("LANG");
+  printf("%s: 0x457 not implemented!\n", __func__);
+  exit(1);
 }
 
 static void sub_1A8C()
@@ -69,7 +74,7 @@ static void sub_1A8C()
   // 1AAC:
   // 0x1A3C
   sub_1EFC(0x1A3C);
-  // var4 loaded into EBX ?
+  // var4 loaded into EBX ? (contains argc)
   printf("%s: 0x1AB6 not implemented (var4 unhandled)!\n", __func__);
 //  exit(1);
 }
@@ -90,7 +95,7 @@ static int sub_1EFC(int arg1)
     return -1;
   }
   // 0x1F05
-  data_E928[(ret - 0xE928) / 4] = 2;
+  data_E928[ret] = 2;
   data_E928[ret + 1] = arg1;
   return 0;
 }
@@ -103,27 +108,35 @@ static int sub_1F2C()
     exit(1);
   }
   // 1F38
-  if (data[4] == 0) {
-
-    // 1F5C
-    if (data[4] <= 0x1F) {
-      // 1FAC
-      //
-      int ret = data[4];
-      printf("WARNING - %s: 0x1FAC not completely implemented!\n", __func__);
-
-      return 0xE930; // not correct
-    }
-    printf("%s: 0x1F5C not implemented!\n", __func__);
+  if (data[1] != 0) {
+    // 0x1F3E
+    printf("%s: 0x1F3E not implemented!\n", __func__);
     exit(1);
-
   }
-  printf("%s: 0x1F38 not implemented!\n", __func__);
-  exit(1);
+
+  // 0x1F5C
+  if (data[1] > 0x1F) {
+    // 0x1F62
+    printf("%s: 0x1F62 not implemented!\n", __func__);
+    exit(1);
+  }
+  // 1FAC
+  int ret = data[1];
+  data[1]++;
+  printf("WARNING - %s: 0x1FAC not completely implemented!\n", __func__);
+
+  return ret + 2; // not correct
 }
 
 void sub_206C(int arg1)
 {
+}
+
+static void sub_2E94(int arg1)
+{
+  // getenv?
+  printf("%s: 0x2EC0 not implemented!\n", __func__);
+  exit(1);
 }
 
 void sub_29F4(int arg1, int arg2, int arg3)
@@ -173,7 +186,9 @@ int main(int argc, char *argv[])
   addr_3AC = 0xEF40;
   if (argc != 3) {
     // 0x5C8
-    // 5E4
+    sub_444(3);
+    printf("%s: 0x5C8 not implemented!\n", __func__);
+    exit(1);
   }
 
   // 5E4
