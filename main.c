@@ -17,6 +17,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 
 /* 0xEC48 */
 struct unknown {
@@ -31,16 +32,50 @@ struct unknown {
 static int sub_1EFC(int arg1);
 static int sub_1F2C();
 static void sub_6738();
-static void sub_2E94(int arg1);
+static void sub_6AB0();
+static void sub_6D30();
+static int sub_7564(const char *arg1, int arg2);
 
 struct unknown stuff = {
   0, 0, 0, 0, 0, sub_6738
 };
 
+// String tables:
+// 0x54
+const char *banner_eng = "DLD - German Linux Distribution -\nUsage: dldkey -k <key>";
+
+// 0x8d
+const char *no_eng = "No, no!";
+// 0x95
+const char *error_eng = "Error: invalid activationkey";
+
+// 0xB2
+const char *banner_ger = "DLD - Deutsche Linux Distribution -\nGebrauch: dldkey -k <key>";
+// 0xf0
+const char *no_ger = "Na, na!";
+// 0xF8
+const char *error_ger = "Fehler: Ungueltiger Aktivierungsschluessel";
+
+// 0xE000 (sort of)
+#if 0
+const char *str_table[6] = {
+  error_ger,
+  no_ger,
+  banner_ger,
+  error_eng,
+  no_eng,
+  banner_eng
+};
+#endif
+
+// Number of strings in str table?
+static unsigned int dword_124 = 6;
+
 // 0xE8F0
 static int done_init = 0;
 
 unsigned int data_E920 = 0xbffffddc;
+unsigned int data_E924 = 0;
 // E928 (no idea how large this is)
 unsigned int data_E928[] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
 
@@ -53,14 +88,43 @@ struct off_EAB0_s off_EAB0 = {
   data_E928
 };
 
+unsigned int data_EB28[] = { };
+unsigned int data_EB78[] = { 0xFBAD2086, 0 };
+
+// Function pointers?
+unsigned int data_EC48[] = { };
+
 // 0xEEC4
 static int g_dword_EEC4 = 0;
 
+static int dword_F750 = 0;
+
 static void sub_444(int arg1)
 {
+  // getenv = 0x2E94
   char *lang = getenv("LANG");
-  printf("%s: 0x457 not implemented!\n", __func__);
-  exit(1);
+  if (strncmp(lang, "german", 7) != 0) {
+
+  }
+
+  unsigned int val = dword_124;
+  val = val >> 0x1F;
+  val += dword_124;
+
+  val = val >> 1;
+
+  arg1 += val;
+
+  /*
+  0xEB78;
+  dword_E000;
+  sub_7564();
+  */
+  sub_7564(banner_eng, 0xEB78);
+  sub_7564("\n", 0xEB78); // 0x437 = "\n"
+
+//  printf("%s: 0x457 not implemented!\n", __func__);
+//  exit(1);
 }
 
 static void sub_1A8C()
@@ -132,13 +196,6 @@ void sub_206C(int arg1)
 {
 }
 
-static void sub_2E94(int arg1)
-{
-  // getenv?
-  printf("%s: 0x2EC0 not implemented!\n", __func__);
-  exit(1);
-}
-
 void sub_29F4(int arg1, int arg2, int arg3)
 {
 }
@@ -152,15 +209,49 @@ void sub_61B8()
 {
 }
 
+static void sub_6358()
+{
+}
+
 void sub_6738()
 {
 }
 
-void sub_7564()
+int sub_6798(const char *arg1, int arg2, int arg3)
+{
+  // esi = arg1
+  // edi = strlen(arg1) arg2
+  //
+  if (arg2 == 0) {
+    return 0;
+  }
+
+  // 0x67C8
+  //
+  sub_6AB0();
+}
+
+static void sub_6AB0()
+{
+  // eax = EB78
+  // edx = EC48
+  // ecx = -1
+  sub_6358();
+}
+
+static void sub_6D30()
 {
 }
 
+static int sub_7564(const char *arg1, int arg2)
+{
+  printf("Strlen: %zu\n", strlen(arg1));
+
+  return 1;
+}
+
 // 0x564
+// ebx = argc, edi = argv
 int main(int argc, char *argv[])
 {
   int var_394;
@@ -191,8 +282,12 @@ int main(int argc, char *argv[])
     exit(1);
   }
 
-  // 5E4
-  printf("%s: 0x5E4 not implemented!\n", __func__);
+  dword_F750 = 1;
+
+  // 0x510, edi, ebx
+  getopt(argc, argv, "k:"); // 0x39F4
+  // 5F0
+  printf("%s: 0x5F0 not implemented!\n", __func__);
   exit(1);
 
   return 0;
