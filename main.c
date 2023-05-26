@@ -14,10 +14,14 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
+#include <ctype.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <unistd.h>
+
+#include "lookup.h"
 
 /* 0xEC48 */
 struct unknown {
@@ -31,6 +35,7 @@ struct unknown {
 
 static int sub_1EFC(int arg1);
 static int sub_1F2C();
+static void sub_2000(char *other, char *cksum);
 static void sub_6738();
 static void sub_6AB0();
 static void sub_6D30();
@@ -98,6 +103,66 @@ unsigned int data_EC48[] = { };
 static int g_dword_EEC4 = 0;
 
 static int dword_F750 = 0;
+
+// 0x304
+static int key_check(const char *key, char *key_chars, char *key_other, char *check_other)
+{
+  char *p;
+
+  if (key == NULL) {
+    return 0;
+  }
+
+  p = key_chars;
+  while (*key != 0) {
+    char kval = *key;
+    unsigned char val = lookup_table[kval * 2];
+
+    printf("%c 0x%02X 0x%02X\n", kval, kval, val);
+    if ((val & 3) == 0) {
+      break;
+    }
+    // Compare key to 2D88 (which is just the ascii?)
+    *p++ = toupper(kval);
+    key++;
+  }
+  printf("Done with alpha\n");
+  *p = '\0';
+
+  if (strlen(key_chars) <= 2) {
+    printf("Key chars is less than or equal to 2 chars, not valid\n");
+    // 0x3E4
+    return 0;
+  }
+
+  // 0x398
+  //
+  p = key_other;
+  while (*key != 0) {
+    char kval = *key;
+    unsigned char val = lookup_table[kval * 2];
+    printf("%c 0x%02X 0x%02X\n", kval, kval, val);
+    if ((val & 8) == 0) {
+      break;
+    }
+    *p++ = kval;
+    key++;
+  }
+
+  *p = '\0';
+
+  if (strlen(key_other) <= 6) {
+    printf("Key other less than 6, probably not valid\n");
+    return 0;
+  }
+
+  char *checksum = p - 6;
+  printf("Check: %s\n", checksum);
+
+  sub_2000(check_other, checksum);
+
+  return *key == '\0';
+}
 
 static void sub_444(int arg1)
 {
@@ -192,6 +257,11 @@ static int sub_1F2C()
   return ret + 2; // not correct
 }
 
+static void sub_2000(char *other, char *cksum)
+{
+  // Copy checksum over?
+}
+
 void sub_206C(int arg1)
 {
 }
@@ -261,6 +331,11 @@ int main(int argc, char *argv[])
   int var_3A4;
   int var_3A8;
   int addr_3AC;
+  int c;
+  char key_char[256];
+  char key_oth[256];
+  char check[256];
+  char *key = NULL;
 
   sub_1ACC();
 
@@ -285,9 +360,33 @@ int main(int argc, char *argv[])
   dword_F750 = 1;
 
   // 0x510, edi, ebx
-  getopt(argc, argv, "k:"); // 0x39F4
-  // 5F0
-  printf("%s: 0x5F0 not implemented!\n", __func__);
+  // 0x39F4 (getopt)
+  while ((c = getopt(argc, argv, "k:")) != -1) {
+    if (c == 'k') {
+      key = optarg;
+    } else {
+      sub_444(3);
+      return 1;
+      break;
+    }
+  }
+  printf("key: %s\n", key);
+  // 634
+  //
+  // 64A
+  int valid = key_check(key, key_char, key_oth, check);
+  printf("alpha: %s\n", key_char);
+  printf("non-alpha: %s\n", key_oth);
+  printf("%d\n", valid);
+
+  if (!valid) {
+    // do error code
+    printf("not valid\n");
+    return 1;
+  }
+
+  // 664
+  printf("%s: 0x664 not implemented!\n", __func__);
   exit(1);
 
   return 0;
