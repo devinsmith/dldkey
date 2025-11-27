@@ -13,3 +13,20 @@ are attempting to match the original binary (where it makes sense) using
 reverse engineering techniques. Since the tool was staticly linked with the C
 library at the time, the tool developed here will not be byte for byte
 compatible with the original binary.
+
+# Debugging / Disassembly
+
+Use gdb, set a breakpoint at 0x564 (main)
+
+```
+b *0x564
+disassemble 0x564 0x570
+info registers
+```
+
+ndisasm may also work but you may need to subtract 0x400 from all
+calls/addresses.
+
+```
+ndisasm -b 32 -k 0x400,0 dldkey
+```
