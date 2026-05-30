@@ -35,7 +35,8 @@ struct unknown {
 
 static int sub_1EFC(int arg1);
 static int sub_1F2C();
-static void sub_2000(char *other, char *cksum);
+static char *sub_2000(char *dest, const char *src);
+static void sub_3F4(char *s);
 static void sub_6738();
 static void sub_6AB0();
 static void sub_6D30();
@@ -104,6 +105,15 @@ static int g_dword_EEC4 = 0;
 
 static int dword_F750 = 0;
 
+static unsigned char key_toupper(unsigned char c)
+{
+  if (c >= 'a' && c <= 'z') {
+    return c - ('a' - 'A');
+  }
+
+  return c;
+}
+
 // 0x304
 static int key_check(const char *key, char *key_chars, char *key_other, char *check_other)
 {
@@ -116,20 +126,22 @@ static int key_check(const char *key, char *key_chars, char *key_other, char *ch
   p = key_chars;
   while (*key != 0) {
     char kval = *key;
-    unsigned char val = lookup_table[kval * 2];
+    unsigned char val = lookup_get_val(kval * 2);
+//    unsigned char val = lookup_table[kval * 2];
 
     printf("%c 0x%02X 0x%02X\n", kval, kval, val);
     if ((val & 3) == 0) {
       break;
     }
     // Compare key to 2D88 (which is just the ascii?)
-    *p++ = toupper(kval);
+    *p++ = key_toupper(kval);
     key++;
   }
-  printf("Done with alpha\n");
   *p = '\0';
+  size_t key_alpha_len = strlen(key_chars);
+  printf("Done with alpha (len = %zu)\n", key_alpha_len);
 
-  if (strlen(key_chars) <= 2) {
+  if (key_alpha_len <= 2) {
     printf("Key chars is less than or equal to 2 chars, not valid\n");
     // 0x3E4
     return 0;
@@ -140,7 +152,7 @@ static int key_check(const char *key, char *key_chars, char *key_other, char *ch
   p = key_other;
   while (*key != 0) {
     char kval = *key;
-    unsigned char val = lookup_table[kval * 2];
+    unsigned char val = lookup_get_val(kval * 2);
     printf("%c 0x%02X 0x%02X\n", kval, kval, val);
     if ((val & 8) == 0) {
       break;
@@ -160,6 +172,7 @@ static int key_check(const char *key, char *key_chars, char *key_other, char *ch
   printf("Check: %s\n", checksum);
 
   sub_2000(check_other, checksum);
+  *checksum = '\0';
 
   return *key == '\0';
 }
@@ -257,9 +270,30 @@ static int sub_1F2C()
   return ret + 2; // not correct
 }
 
-static void sub_2000(char *other, char *cksum)
+static char *sub_2000(char *dest, const char *src)
 {
-  // Copy checksum over?
+  char *ret = dest;
+
+  while ((*dest++ = *src++) != '\0') {
+  }
+
+  return ret;
+}
+
+static void sub_3F4(char *s)
+{
+  char *end = s + strlen(s);
+
+  if (end == s) {
+    return;
+  }
+
+  --end;
+  while (end > s) {
+    char tmp = *s;
+    *s++ = *end;
+    *end-- = tmp;
+  }
 }
 
 void sub_206C(int arg1)
@@ -324,6 +358,7 @@ static int sub_7564(const char *arg1, int arg2)
 // ebx = argc, edi = argv
 int main(int argc, char *argv[])
 {
+  int var_200;
   int var_394;
   int var_398;
   int var_39C;
@@ -385,9 +420,14 @@ int main(int argc, char *argv[])
     return 1;
   }
 
+  // Check if key is any form of MMRUN, MMDEV, or MMDOC
   // 664
   printf("%s: 0x664 not implemented!\n", __func__);
-  exit(1);
+  //exit(1);
+  //
+
+  // 8E4
+  sub_3F4(key_oth);
 
   return 0;
 }
