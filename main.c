@@ -34,6 +34,8 @@ struct unknown {
 };
 
 static int sub_1EFC(int arg1);
+static unsigned int sub_1B9C();
+static unsigned int sub_1D1C(unsigned int seed);
 static int sub_1F2C();
 static char *sub_2000(char *dest, const char *src);
 static void sub_3F4(char *s);
@@ -41,6 +43,7 @@ static void sub_6738();
 static void sub_6AB0();
 static void sub_6D30();
 static int sub_7564(const char *arg1, int arg2);
+static int validate_key_digits(char *key_other, const char *check_other);
 
 struct unknown stuff = {
   0, 0, 0, 0, 0, sub_6738
@@ -105,6 +108,12 @@ static int g_dword_EEC4 = 0;
 
 static int dword_F750 = 0;
 
+static unsigned int rand_state0 = 0x330E;
+static unsigned int rand_state1 = 0xABCD;
+static unsigned int rand_state2 = 0x1234;
+
+#define DEBUG_KEY_CHECK 0
+
 static unsigned char key_toupper(unsigned char c)
 {
   if (c >= 'a' && c <= 'z') {
@@ -129,7 +138,9 @@ static int key_check(const char *key, char *key_chars, char *key_other, char *ch
     unsigned char val = lookup_get_val(kval * 2);
 //    unsigned char val = lookup_table[kval * 2];
 
-    printf("%c 0x%02X 0x%02X\n", kval, kval, val);
+    if (DEBUG_KEY_CHECK) {
+      fprintf(stderr, "%c 0x%02X 0x%02X\n", kval, kval, val);
+    }
     if ((val & 3) == 0) {
       break;
     }
@@ -139,10 +150,14 @@ static int key_check(const char *key, char *key_chars, char *key_other, char *ch
   }
   *p = '\0';
   size_t key_alpha_len = strlen(key_chars);
-  printf("Done with alpha (len = %zu)\n", key_alpha_len);
+  if (DEBUG_KEY_CHECK) {
+    fprintf(stderr, "Done with alpha (len = %zu)\n", key_alpha_len);
+  }
 
   if (key_alpha_len <= 2) {
-    printf("Key chars is less than or equal to 2 chars, not valid\n");
+    if (DEBUG_KEY_CHECK) {
+      fprintf(stderr, "Key chars is less than or equal to 2 chars, not valid\n");
+    }
     // 0x3E4
     return 0;
   }
@@ -153,7 +168,9 @@ static int key_check(const char *key, char *key_chars, char *key_other, char *ch
   while (*key != 0) {
     char kval = *key;
     unsigned char val = lookup_get_val(kval * 2);
-    printf("%c 0x%02X 0x%02X\n", kval, kval, val);
+    if (DEBUG_KEY_CHECK) {
+      fprintf(stderr, "%c 0x%02X 0x%02X\n", kval, kval, val);
+    }
     if ((val & 8) == 0) {
       break;
     }
@@ -164,12 +181,16 @@ static int key_check(const char *key, char *key_chars, char *key_other, char *ch
   *p = '\0';
 
   if (strlen(key_other) <= 6) {
-    printf("Key other less than 6, probably not valid\n");
+    if (DEBUG_KEY_CHECK) {
+      fprintf(stderr, "Key other less than 6, probably not valid\n");
+    }
     return 0;
   }
 
   char *checksum = p - 6;
-  printf("Check: %s\n", checksum);
+  if (DEBUG_KEY_CHECK) {
+    fprintf(stderr, "Check: %s\n", checksum);
+  }
 
   sub_2000(check_other, checksum);
   *checksum = '\0';
@@ -217,7 +238,9 @@ static void sub_1A8C()
   // 0x1A3C
   sub_1EFC(0x1A3C);
   // var4 loaded into EBX ? (contains argc)
-  printf("%s: 0x1AB6 not implemented (var4 unhandled)!\n", __func__);
+  if (DEBUG_KEY_CHECK) {
+    fprintf(stderr, "%s: 0x1AB6 not implemented (var4 unhandled)!\n", __func__);
+  }
 //  exit(1);
 }
 
@@ -246,26 +269,28 @@ static int sub_1F2C()
 {
   unsigned int *data = off_EAB0.data;
   if (data == NULL) {
-    printf("%s: 0x1F68 not implemented!\n", __func__);
+    fprintf(stderr, "%s: 0x1F68 not implemented!\n", __func__);
     exit(1);
   }
   // 1F38
   if (data[1] != 0) {
     // 0x1F3E
-    printf("%s: 0x1F3E not implemented!\n", __func__);
+    fprintf(stderr, "%s: 0x1F3E not implemented!\n", __func__);
     exit(1);
   }
 
   // 0x1F5C
   if (data[1] > 0x1F) {
     // 0x1F62
-    printf("%s: 0x1F62 not implemented!\n", __func__);
+    fprintf(stderr, "%s: 0x1F62 not implemented!\n", __func__);
     exit(1);
   }
   // 1FAC
   int ret = data[1];
   data[1]++;
-  printf("WARNING - %s: 0x1FAC not completely implemented!\n", __func__);
+  if (DEBUG_KEY_CHECK) {
+    fprintf(stderr, "WARNING - %s: 0x1FAC not completely implemented!\n", __func__);
+  }
 
   return ret + 2; // not correct
 }
@@ -294,6 +319,58 @@ static void sub_3F4(char *s)
     *s++ = *end;
     *end-- = tmp;
   }
+}
+
+static void sub_1BDC()
+{
+  uint64_t state =
+    ((uint64_t)(rand_state2 & 0xFFFF) << 32) |
+    ((uint64_t)(rand_state1 & 0xFFFF) << 16) |
+    (rand_state0 & 0xFFFF);
+
+  state = (state * 0x5DEECE66DULL + 0xB) & 0xFFFFFFFFFFFFULL;
+
+  rand_state0 = state & 0xFFFF;
+  rand_state1 = (state >> 16) & 0xFFFF;
+  rand_state2 = (state >> 32) & 0xFFFF;
+}
+
+static unsigned int sub_1B9C()
+{
+  sub_1BDC();
+  return (rand_state1 >> 1) + (rand_state2 << 15);
+}
+
+static unsigned int sub_1D1C(unsigned int seed)
+{
+  rand_state0 = 0x330E;
+  rand_state1 = seed & 0xFFFF;
+  rand_state2 = seed >> 16;
+
+  return rand_state2;
+}
+
+static int validate_key_digits(char *key_other, const char *check_other)
+{
+  unsigned long key_value;
+  unsigned long check_value;
+  unsigned int i;
+  unsigned int expected;
+  char expected_str[128];
+
+  sub_3F4(key_other);
+  key_value = strtoul(key_other, NULL, 10);
+  check_value = strtoul(check_other, NULL, 10);
+
+  sub_1D1C(0x41424D55);
+  for (i = 0; i < check_value % 0x47F; i++) {
+    sub_1B9C();
+  }
+
+  expected = key_value + sub_1B9C();
+  snprintf(expected_str, sizeof(expected_str), "%.10u", expected);
+
+  return strncmp(expected_str, "222", 3) == 0;
 }
 
 void sub_206C(int arg1)
@@ -349,7 +426,9 @@ static void sub_6D30()
 
 static int sub_7564(const char *arg1, int arg2)
 {
-  printf("Strlen: %zu\n", strlen(arg1));
+  if (DEBUG_KEY_CHECK) {
+    fprintf(stderr, "Strlen: %zu\n", strlen(arg1));
+  }
 
   return 1;
 }
@@ -388,7 +467,7 @@ int main(int argc, char *argv[])
   if (argc != 3) {
     // 0x5C8
     sub_444(3);
-    printf("%s: 0x5C8 not implemented!\n", __func__);
+    fprintf(stderr, "%s: 0x5C8 not implemented!\n", __func__);
     exit(1);
   }
 
@@ -405,29 +484,29 @@ int main(int argc, char *argv[])
       break;
     }
   }
-  printf("key: %s\n", key);
+  if (DEBUG_KEY_CHECK) {
+    fprintf(stderr, "key: %s\n", key);
+  }
   // 634
   //
   // 64A
   int valid = key_check(key, key_char, key_oth, check);
-  printf("alpha: %s\n", key_char);
-  printf("non-alpha: %s\n", key_oth);
-  printf("%d\n", valid);
+  if (DEBUG_KEY_CHECK) {
+    fprintf(stderr, "alpha: %s\n", key_char);
+    fprintf(stderr, "non-alpha: %s\n", key_oth);
+    fprintf(stderr, "%d\n", valid);
+  }
 
   if (!valid) {
     // do error code
-    printf("not valid\n");
+    fprintf(stderr, "not valid\n");
     return 1;
   }
 
-  // Check if key is any form of MMRUN, MMDEV, or MMDOC
-  // 664
-  printf("%s: 0x664 not implemented!\n", __func__);
-  //exit(1);
-  //
-
-  // 8E4
-  sub_3F4(key_oth);
+  if (!validate_key_digits(key_oth, check)) {
+    fprintf(stderr, "not valid\n");
+    return 1;
+  }
 
   return 0;
 }
